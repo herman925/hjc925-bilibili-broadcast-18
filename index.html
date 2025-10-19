@@ -1,0 +1,1661 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上下文工程入門 - Context Engineering</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --pink: #E4004B;
+            --orange: #ED775A;
+            --yellow: #FAD691;
+            --grey: #C9CDCF;
+            --dark: #1a1a1a;
+            --light: #f5f5f5;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--dark);
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* Slide Container */
+        .slides-container {
+            width: 100%;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .slide {
+            width: 100%;
+            min-height: 100vh;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 4rem 2rem;
+            position: relative;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        /* Typography */
+        h1 {
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        h2 {
+            font-size: clamp(1.5rem, 4vw, 3rem);
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        h3 {
+            font-size: clamp(1.2rem, 3vw, 2rem);
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        p {
+            font-size: clamp(1rem, 2vw, 1.5rem);
+            line-height: 1.6;
+            max-width: 800px;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: clamp(1.2rem, 2.5vw, 2rem);
+            color: #ffffff;
+            margin-bottom: 2rem;
+            opacity: 0.95;
+        }
+
+
+        /* Slide 2 Animations */
+        @keyframes flyIntoBin {
+            0% {
+                transform: translateY(-100px) translateX(var(--start-x)) scale(1);
+                opacity: 1;
+            }
+            70% {
+                transform: translateY(200px) translateX(0) scale(0.5);
+                opacity: 0.5;
+            }
+            100% {
+                transform: translateY(300px) translateX(0) scale(0.1);
+                opacity: 0;
+            }
+        }
+        
+        .flying-text {
+            position: absolute;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: rgba(0, 0, 0, 0.9); text-shadow: 0 0 3px rgba(255,255,255,0.5);
+            animation: flyIntoBin 3s ease-in infinite;
+            pointer-events: none;
+        }
+        
+        .flying-text:nth-child(1) { --start-x: -200px; animation-delay: 0s; top: 10%; left: 20%; }
+        .flying-text:nth-child(2) { --start-x: 200px; animation-delay: 0.5s; top: 15%; left: 70%; }
+        .flying-text:nth-child(3) { --start-x: -150px; animation-delay: 1s; top: 20%; left: 30%; }
+        .flying-text:nth-child(4) { --start-x: 150px; animation-delay: 1.5s; top: 25%; left: 60%; }
+        .flying-text:nth-child(5) { --start-x: -100px; animation-delay: 2s; top: 30%; left: 40%; }
+
+        /* Content Layouts */
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            width: 100%;
+            max-width: 1200px;
+            margin: 2rem 0;
+        }
+        
+        .content-grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 1400px;
+            margin: 2rem 0;
+        }
+        
+        @media (max-width: 1200px) {
+            .content-grid-4 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+
+        .kb-grid-3x2 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 1400px;
+            margin: 2rem 0;
+        }
+        
+        @media (max-width: 1200px) {
+            .kb-grid-3x2 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .kb-grid-3x2 {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .kb-grid-3x2 .kb-card {
+            padding: 2rem;
+        }
+        
+        .kb-grid-3x2 .kb-title {
+            font-size: clamp(1.3rem, 2vw, 1.8rem);
+        }
+        
+        .kb-grid-3x2 .kb-keywords {
+            font-size: clamp(1rem, 1.5vw, 1.2rem);
+        }
+        
+        .kb-grid-3x2 .kb-preview {
+            font-size: clamp(1.1rem, 1.6vw, 1.4rem);
+        }
+        
+        #slide7 {
+            background-image: url('assets/wukong_scenic_bg.jpg');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        
+        #slide7::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+        }
+        
+        
+        #slide10 {
+            max-height: 1080px;
+            overflow: hidden;
+        }
+        
+        #slide10 .two-column-layout {
+            max-height: 900px;
+        }
+
+        /* Slide 6 uses default gradient background */
+        
+        #slide7 > * {
+            position: relative;
+            z-index: 1;
+        }
+        
+        #slide8 {
+            background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('assets/knowledge_network.png');
+            background-size: cover;
+            background-position: center;
+        }
+        
+        @keyframes funnelFlowIn {
+            0% { opacity: 0; transform: translateY(-50px) translateX(var(--offset-x)) scale(0.5); }
+            30% { opacity: 1; }
+            70% { opacity: 1; transform: translateY(200px) translateX(0) scale(0.8); }
+            100% { opacity: 0; transform: translateY(250px) translateX(0) scale(0.3); }
+        }
+        
+        @keyframes funnelFlowOut {
+            0% { opacity: 0; transform: translateY(250px) scale(0.5); }
+            50% { opacity: 1; transform: translateY(350px) scale(1); }
+            100% { opacity: 0; transform: translateY(450px) scale(0.8); }
+        }
+        
+        .funnel-flow-dot-in {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            animation: funnelFlowIn 3s ease-in-out infinite;
+        }
+        
+        .funnel-flow-dot-in:nth-child(1) { --offset-x: -60px; background: #E4004B; animation-delay: 0s; }
+        .funnel-flow-dot-in:nth-child(2) { --offset-x: 60px; background: #ED775A; animation-delay: 0.3s; }
+        .funnel-flow-dot-in:nth-child(3) { --offset-x: -40px; background: #FAD691; animation-delay: 0.6s; }
+        .funnel-flow-dot-in:nth-child(4) { --offset-x: 40px; background: #C9CDCF; animation-delay: 0.9s; }
+        .funnel-flow-dot-in:nth-child(5) { --offset-x: -20px; background: #E4004B; animation-delay: 1.2s; }
+        
+        .funnel-flow-dot-out {
+            position: absolute;
+            top: 250px;
+            left: 50%;
+            width: 22px;
+            height: 22px;
+            background: #FFD700;
+            border-radius: 50%;
+            box-shadow: 0 0 15px #FFD700;
+            animation: funnelFlowOut 2s ease-out infinite;
+            animation-delay: 1.8s;
+        }
+        
+        #slide10 .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            #slide10 .stat-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        #slide10 .stat-card {
+            padding: 1.2rem !important;
+            min-height: 120px;
+        }
+        
+        #slide10 .stat-number {
+            font-size: clamp(2rem, 4vw, 3rem) !important;
+        }
+        
+        #slide10 .stat-label {
+            font-size: clamp(0.85rem, 1.3vw, 1.1rem) !important;
+        }
+        
+        #slide10 .card {
+            padding: 1.2rem !important;
+        }
+
+        @media (max-width: 768px) {
+            .content-grid-4 {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .two-column-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            width: 100%;
+            max-width: 1200px;
+            align-items: start;
+        }
+        
+        @media (max-width: 968px) {
+            .two-column-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .content-split {
+            display: flex;
+            gap: 3rem;
+            width: 100%;
+            max-width: 1200px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .content-split > * {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        /* Visual Images */
+        .visual-image {
+            width: 100%;
+            max-width: 600px;
+            height: auto;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Cards */
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--pink);
+        }
+
+        .card h3 {
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        .card p {
+            text-align: left;
+            font-size: clamp(0.9rem, 1.5vw, 1.2rem);
+            color: #ffffff;
+            opacity: 0.95;
+        }
+
+        /* Specific Slide Backgrounds */
+        #slide1 { background: linear-gradient(135deg, var(--pink) 0%, var(--orange) 100%); }
+        #slide2 { background: linear-gradient(135deg, var(--orange) 0%, var(--yellow) 100%); }
+        #slide3 { background: linear-gradient(135deg, var(--pink) 0%, #8B0040 100%); }
+        #slide4 { background: linear-gradient(135deg, var(--orange) 0%, var(--yellow) 100%); }
+        #slide5 { background: linear-gradient(135deg, #8B0040 0%, var(--pink) 100%); }
+        #slide6 { background: linear-gradient(135deg, var(--yellow) 0%, var(--orange) 100%); }
+        #slide7 { background: linear-gradient(135deg, var(--pink) 0%, #2a2a2a 100%); }
+        #slide8 { background: linear-gradient(135deg, var(--orange) 0%, var(--pink) 100%); }
+        #slide9 { background: linear-gradient(135deg, var(--yellow) 0%, var(--orange) 100%); }
+        #slide10 { background: linear-gradient(135deg, var(--pink) 0%, #4a0028 100%); }
+        #slide11 { background: linear-gradient(135deg, var(--orange) 0%, var(--pink) 100%); }
+        #slide12 { background: linear-gradient(135deg, var(--pink) 0%, var(--orange) 100%); }
+
+        /* Dialogue Box */
+        .dialogue-box {
+            background: rgba(0, 0, 0, 0.5);
+            border-left: 4px solid var(--yellow);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin: 1rem 0;
+            max-width: 700px;
+        }
+
+        .dialogue-box p {
+            text-align: left;
+            margin: 0.5rem 0;
+        }
+
+        .highlight {
+            color: #FFD700;
+            font-weight: 700;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.1rem 0.3rem;
+            border-radius: 4px;
+        }
+
+        /* Learning Points */
+        .learning-point {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .learning-number {
+            background: var(--pink);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        /* Context Comparison */
+        .context-version {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        .context-version h3 {
+            color: #ffffff;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .context-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 0.8rem 0;
+        }
+
+        .context-label {
+            color: #FFD700;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+
+        .context-value {
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+
+        .new-badge {
+            display: inline-block;
+            background: var(--yellow);
+            color: var(--dark);
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        /* Knowledge Cards */
+        .kb-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 1200px;
+            margin: 2rem 0;
+        }
+
+        .kb-card {
+            background: rgba(255, 255, 255, 0.12);
+            border: 2px solid rgba(255, 255, 255, 0.25);
+            border-radius: 12px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .kb-card:hover {
+            transform: scale(1.05);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .kb-title {
+            color: #ffffff;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .kb-keywords {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-style: italic;
+            margin-bottom: 0.5rem;
+        }
+
+        .kb-preview {
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            width: 100%;
+            max-width: 900px;
+            margin: 2rem 0;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: scale(1.05);
+        }
+
+        .stat-number {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 700;
+            color: #FFD700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: clamp(0.9rem, 1.5vw, 1.2rem);
+        }
+
+        /* Evolution Stages */
+        .evolution-container {
+            display: flex;
+            gap: 2rem;
+            width: 100%;
+            max-width: 1200px;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .evolution-stage {
+            background: rgba(255, 255, 255, 0.15);
+            border: 3px solid;
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            flex: 1;
+            min-width: 250px;
+            max-width: 350px;
+            transition: all 0.3s ease;
+        }
+
+        .evolution-stage:hover {
+            transform: translateY(-10px);
+        }
+
+        .evolution-stage:nth-child(1) { border-color: var(--grey); }
+        .evolution-stage:nth-child(2) { border-color: var(--pink); }
+        .evolution-stage:nth-child(3) { border-color: var(--yellow); }
+
+        .stage-level {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #FFD700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stage-name {
+            font-size: 1.5rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .stage-desc {
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        /* Thank You */
+        .thank-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .bilibili-logo {
+            width: 200px;
+            height: auto;
+        }
+
+        .qr-placeholder {
+            width: 250px;
+            height: 250px;
+            background: white;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .cta-text {
+            font-size: clamp(1.8rem, 4vw, 3rem);
+            font-weight: 700;
+            color: var(--yellow);
+        }
+
+        .channel-link {
+            color: var(--yellow);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* Navigation */
+        .nav-controls {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            gap: 1rem;
+            z-index: 1000;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: var(--pink);
+            border-color: var(--pink);
+            transform: scale(1.05);
+        }
+
+        .page-indicator {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            z-index: 1000;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, var(--dark) 0%, #2a2a2a 100%);
+            border: 2px solid var(--pink);
+            border-radius: 20px;
+            padding: 3rem;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: var(--pink);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal h2 {
+            color: var(--pink);
+            margin-bottom: 1.5rem;
+        }
+
+        .modal h3 {
+            color: var(--orange);
+            margin-top: 1.5rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .modal p {
+            text-align: left;
+            margin-bottom: 1rem;
+        }
+
+        /* Chart Container */
+        .chart-wrapper {
+            width: 100%;
+            max-width: 500px;
+            height: 350px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        /* Responsive */
+
+        .kb-grid-3x2 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 1400px;
+            margin: 2rem 0;
+        }
+        
+        @media (max-width: 1200px) {
+            .kb-grid-3x2 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .kb-grid-3x2 {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .kb-grid-3x2 .kb-card {
+            padding: 2rem;
+        }
+        
+        .kb-grid-3x2 .kb-title {
+            font-size: clamp(1.3rem, 2vw, 1.8rem);
+        }
+        
+        .kb-grid-3x2 .kb-keywords {
+            font-size: clamp(1rem, 1.5vw, 1.2rem);
+        }
+        
+        .kb-grid-3x2 .kb-preview {
+            font-size: clamp(1.1rem, 1.6vw, 1.4rem);
+        }
+        
+        #slide7 {
+            background-image: url('assets/wukong_scenic_bg.jpg');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        
+        #slide7::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+        }
+        
+        
+        #slide10 {
+            max-height: 1080px;
+            overflow: hidden;
+        }
+        
+        #slide10 .two-column-layout {
+            max-height: 900px;
+        }
+
+        /* Slide 6 uses default gradient background */
+        
+        #slide7 > * {
+            position: relative;
+            z-index: 1;
+        }
+        
+        #slide8 {
+            background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('assets/knowledge_network.png');
+            background-size: cover;
+            background-position: center;
+        }
+        
+        @keyframes funnelFlowIn {
+            0% { opacity: 0; transform: translateY(-50px) translateX(var(--offset-x)) scale(0.5); }
+            30% { opacity: 1; }
+            70% { opacity: 1; transform: translateY(200px) translateX(0) scale(0.8); }
+            100% { opacity: 0; transform: translateY(250px) translateX(0) scale(0.3); }
+        }
+        
+        @keyframes funnelFlowOut {
+            0% { opacity: 0; transform: translateY(250px) scale(0.5); }
+            50% { opacity: 1; transform: translateY(350px) scale(1); }
+            100% { opacity: 0; transform: translateY(450px) scale(0.8); }
+        }
+        
+        .funnel-flow-dot-in {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            animation: funnelFlowIn 3s ease-in-out infinite;
+        }
+        
+        .funnel-flow-dot-in:nth-child(1) { --offset-x: -60px; background: #E4004B; animation-delay: 0s; }
+        .funnel-flow-dot-in:nth-child(2) { --offset-x: 60px; background: #ED775A; animation-delay: 0.3s; }
+        .funnel-flow-dot-in:nth-child(3) { --offset-x: -40px; background: #FAD691; animation-delay: 0.6s; }
+        .funnel-flow-dot-in:nth-child(4) { --offset-x: 40px; background: #C9CDCF; animation-delay: 0.9s; }
+        .funnel-flow-dot-in:nth-child(5) { --offset-x: -20px; background: #E4004B; animation-delay: 1.2s; }
+        
+        .funnel-flow-dot-out {
+            position: absolute;
+            top: 250px;
+            left: 50%;
+            width: 22px;
+            height: 22px;
+            background: #FFD700;
+            border-radius: 50%;
+            box-shadow: 0 0 15px #FFD700;
+            animation: funnelFlowOut 2s ease-out infinite;
+            animation-delay: 1.8s;
+        }
+        
+        #slide10 .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            #slide10 .stat-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        #slide10 .stat-card {
+            padding: 1.2rem !important;
+            min-height: 120px;
+        }
+        
+        #slide10 .stat-number {
+            font-size: clamp(2rem, 4vw, 3rem) !important;
+        }
+        
+        #slide10 .stat-label {
+            font-size: clamp(0.85rem, 1.3vw, 1.1rem) !important;
+        }
+        
+        #slide10 .card {
+            padding: 1.2rem !important;
+        }
+
+        @media (max-width: 768px) {
+            .slide {
+                padding: 2rem 1rem;
+            }
+
+            .content-split {
+                flex-direction: column;
+            }
+
+            .nav-controls {
+                bottom: 1rem;
+                right: 1rem;
+                flex-direction: column;
+            }
+
+            .page-indicator {
+                bottom: 1rem;
+                left: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="slides-container">
+        <!-- Slide 1: Cover -->
+        <div class="slide active" id="slide1">
+            <h1>從「對牛彈琴」到「心有靈犀」</h1>
+            <p class="subtitle">AI 溝通的藝術：上下文工程入門</p>
+            
+            <div class="content-split" style="margin-top: 3rem;">
+                <img src="assets/chaos_communication.png" alt="混亂溝通 vs 清晰溝通" class="visual-image">
+                
+                <div class="dialogue-box">
+                    <p><strong>她：</strong>「氣死我了！<span class="highlight">我正在做的那個項目</span>，客戶又提無理要求，老闆還在旁邊煽風點火，小張又不給力！」</p>
+                    <p><strong>你：</strong>「啊？...多喝熱水？」</p>
+                    <p class="highlight" style="margin-top: 1rem;">💡 如果她能先說：「我正在做的那個項目」是什麼，你是不是就能聽懂了？</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: GIGO -->
+        <div class="slide" id="slide2">
+            <h2>Garbage In, Garbage Out</h2>
+            <p class="subtitle">沒有上下文，AI 也只能亂講</p>
+            
+            <div style="position: relative; width: 100%; max-width: 600px; height: 400px; margin: 1rem auto 0.5rem;">
+                <img src="assets/garbage_blender.png" alt="GIGO 概念" class="visual-image" style="max-width: 360px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                <div class="flying-text">幫我寫個報告</div>
+                <div class="flying-text">分析一下</div>
+                <div class="flying-text">總結重點</div>
+                <div class="flying-text">給我建議</div>
+                <div class="flying-text">怎麼辦？</div>
+            </div>
+            
+            <div class="card" style="max-width: 700px;">
+                <p style="text-align: center; font-size: 1.2rem;">
+                    傳統提示詞工程就像「碰運氣」——<br>
+                    同樣的問題，換個說法結果就變了。<br><br>
+                    <span class="highlight">上下文工程</span>讓 AI 「不想亂講也講不出來」！
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide 3: Context Engineering Framework -->
+        <div class="slide" id="slide3">
+            <h2>上下文工程：四大核心組件</h2>
+            
+            <img src="assets/ai_framework.png" alt="上下文工程框架" class="visual-image" style="margin: 2rem 0;">
+            
+            <div class="content-grid-4">
+                <div class="card">
+                    <h3>🎭 角色</h3>
+                    <p>告訴 AI 它是誰、該做什麼</p>
+                </div>
+                <div class="card">
+                    <h3>📚 知識</h3>
+                    <p>提供可追溯的資料來源</p>
+                </div>
+                <div class="card">
+                    <h3>📏 規則</h3>
+                    <p>設定輸出格式和約束</p>
+                </div>
+                <div class="card">
+                    <h3>🎯 目標</h3>
+                    <p>明確任務和成功標準</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: Case 1 Intro -->
+        <div class="slide" id="slide4">
+            <h2>案例一：PLAUD NOTE 智能客服</h2>
+            <p class="subtitle">從零開始搭建客服上下文</p>
+            
+            <div class="content-split">
+                <img src="assets/plaud_note.jpg" alt="PLAUD NOTE" class="visual-image" style="max-width: 350px;">
+                
+                <div>
+                    <div class="learning-point">
+                        <div class="learning-number">1</div>
+                        <div>
+                            <h3>判斷用戶需求</h3>
+                            <p>用戶問的是產品功能？還是技術支持？</p>
+                        </div>
+                    </div>
+                    <div class="learning-point">
+                        <div class="learning-number">2</div>
+                        <div>
+                            <h3>迭代更新上下文</h3>
+                            <p>根據對話歷史，動態調整回應策略</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Context Building -->
+        <div class="slide" id="slide5">
+            <h2>上下文搭建與迭代</h2>
+            
+            <div class="content-split">
+                <div class="context-version" style="cursor: pointer;" onclick="showModal('context_v1')">
+                    <h3>V1.0 基礎版 <span style="font-size: 0.8rem; opacity: 0.7;">（點擊查看詳情）</span></h3>
+                    <div class="context-item">
+                        <div class="context-label">角色</div>
+                        <div class="context-value">PLAUD NOTE 客服助手</div>
+                    </div>
+                    <div class="context-item">
+                        <div class="context-label">知識</div>
+                        <div class="context-value">產品規格、常見問題</div>
+                    </div>
+                    <div class="context-item">
+                        <div class="context-label">規則</div>
+                        <div class="context-value">禮貌、簡潔、專業</div>
+                    </div>
+                </div>
+                
+                <div class="context-version" style="cursor: pointer;" onclick="showModal('context_v2')">
+                    <h3>V2.0 進化版 <span style="font-size: 0.8rem; opacity: 0.7;">（點擊查看詳情）</span></h3>
+                    <div class="context-item">
+                        <div class="context-label">角色</div>
+                        <div class="context-value">PLAUD NOTE 客服助手</div>
+                    </div>
+                    <div class="context-item">
+                        <div class="context-label">知識</div>
+                        <div class="context-value">產品規格、常見問題</div>
+                    </div>
+                    <div class="context-item">
+                        <div class="context-label">規則</div>
+                        <div class="context-value">禮貌、簡潔、專業</div>
+                    </div>
+                    <div class="context-item" style="border: 2px solid var(--yellow);">
+                        <div class="context-label">對話歷史 <span class="new-badge">NEW</span></div>
+                        <div class="context-value">記住用戶問過的問題，避免重複</div>
+                    </div>
+                    <div class="context-item" style="border: 2px solid var(--yellow);">
+                        <div class="context-label">情緒識別 <span class="new-badge">NEW</span></div>
+                        <div class="context-value">判斷用戶是否不滿，調整語氣</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Case 1 Summary -->
+        <div class="slide" id="slide6">
+            <h2>案例一總結</h2>
+            
+            <div class="two-column-layout" style="margin-top: 2rem;">
+                <div>
+                    <img src="assets/iteration_cycle.png" alt="迭代循環" class="visual-image" style="max-width: 100%; opacity: 0.9;">
+                </div>
+                
+                <div class="card">
+                    <h3>🔑 關鍵學習點</h3>
+                    <div class="learning-point" style="margin-top: 1.5rem;">
+                        <div class="learning-number">1</div>
+                        <div>
+                            <p><strong>判斷需求是第一步</strong><br>
+                            不管是人還是機器，都需要先理解「用戶想要什麼」才能給出好答案。</p>
+                        </div>
+                    </div>
+                    <div class="learning-point">
+                        <div class="learning-number">2</div>
+                        <div>
+                            <p><strong>迭代讓上下文更聪明</strong><br>
+                            V1.0 → V2.0 不是推倒重來，而是在原有基礎上「加料」，讓 AI 記住對話、識別情緒。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: Case 2 Intro -->
+        <div class="slide" id="slide7">
+            <h2>案例二：黑神話悟空文化分析</h2>
+            <p class="subtitle">多源知識整合的上下文工程</p>
+            
+            <div class="content-split">
+                <img src="assets/black_myth_wukong.jpeg" alt="黑神話悟空" class="visual-image" style="max-width: 400px; opacity: 0.9;">
+                
+                <div>
+                    <div class="learning-point">
+                        <div class="learning-number">1</div>
+                        <div>
+                            <h3>多篇幅知識整合</h3>
+                            <p>不只一段文字，而是多個知識塊組合</p>
+                        </div>
+                    </div>
+                    <div class="learning-point">
+                        <div class="learning-number">2</div>
+                        <div>
+                            <h3>結構化知識庫</h3>
+                            <p>每個知識塊都有標題、關鍵詞、來源</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: Knowledge Base -->
+        <div class="slide" id="slide8">
+            <h2>知識庫構建</h2>
+            <p class="subtitle">帶元數據 (Metadata) 的知識片段</p>
+            
+            <div class="kb-grid kb-grid-3x2">
+                <div class="kb-card" onclick="showModal('kb1')">
+                    <div class="kb-title">📖 故事背景</div>
+                    <div class="kb-keywords">西遊記、孫悟空、神話</div>
+                    <div class="kb-preview">基於《西遊記》的文化背景...</div>
+                </div>
+                <div class="kb-card" onclick="showModal('kb2')">
+                    <div class="kb-title">🎨 美術風格</div>
+                    <div class="kb-keywords">中國風、寫實、UE5</div>
+                    <div class="kb-preview">採用虛幻引擎5打造的視覺...</div>
+                </div>
+                <div class="kb-card" onclick="showModal('kb3')">
+                    <div class="kb-title">👹 怪物設計</div>
+                    <div class="kb-keywords">妖怪、BOSS、神話生物</div>
+                    <div class="kb-preview">每個妖怪都有獨特的文化...</div>
+                </div>
+                <div class="kb-card" onclick="showModal('kb4')">
+                    <div class="kb-title">⚔️ 戰鬥系統</div>
+                    <div class="kb-keywords">動作、策略、技能</div>
+                    <div class="kb-preview">融合動作與策略的戰鬥...</div>
+                </div>
+                <div class="kb-card" onclick="showModal('kb5')">
+                    <div class="kb-title">🎵 音樂配樂</div>
+                    <div class="kb-keywords">中國樂器、交響樂</div>
+                    <div class="kb-preview">傳統與現代結合的音樂...</div>
+                </div>
+                <div class="kb-card" onclick="showModal('kb6')">
+                    <div class="kb-title">🌏 文化輸出</div>
+                    <div class="kb-keywords">全球影響、中國文化</div>
+                    <div class="kb-preview">向世界展示中國神話...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: Case 2 Summary -->
+        <div class="slide" id="slide9">
+            <h2>案例二總結</h2>
+            
+            <div class="two-column-layout" style="margin-top: 2rem;">
+                <div style="position: relative;">
+                    <img src="assets/knowledge_funnel.png" alt="知識漏斗" class="visual-image" style="max-width: 100%; max-height: 600px; object-fit: contain;">
+                    <!-- Multi-colored dots going in -->
+                    <div class="funnel-flow-dot-in"></div>
+                    <div class="funnel-flow-dot-in"></div>
+                    <div class="funnel-flow-dot-in"></div>
+                    <div class="funnel-flow-dot-in"></div>
+                    <div class="funnel-flow-dot-in"></div>
+                    <!-- Single gold dot coming out -->
+                    <div class="funnel-flow-dot-out"></div>
+                </div>
+                
+                <div class="card">
+                    <h3>🔑 關鍵學習點</h3>
+                    <div class="learning-point" style="margin-top: 1.5rem;">
+                        <div class="learning-number">1</div>
+                        <div>
+                            <p><strong>多源整合不是堆砥</strong><br>
+                            6 個知識塊不是隨便放在一起，而是有結構、有標籤、可檢索。</p>
+                        </div>
+                    </div>
+                    <div class="learning-point">
+                        <div class="learning-number">2</div>
+                        <div>
+                            <p><strong>元數據 (Metadata) 是關鍵</strong><br>
+                            每個知識塊都有「標題」「關鍵詞」「來源」，讓 AI 知道該用哪一塊。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: Industry Data -->
+        <div class="slide" id="slide10">
+            <h2>2025 年 AI 應用現狀</h2>
+            <p class="subtitle">為什麼需要上下文工程？</p>
+            
+            <div class="stat-grid" style="margin-top: 2rem;">
+                <div class="stat-card">
+                    <div class="stat-number">50%</div>
+                    <div class="stat-label">企業面臨 AI 可靠性問題</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">75%</div>
+                    <div class="stat-label">項目因缺乏結構化上下文而失敗</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">25%</div>
+                    <div class="stat-label">AI 項目達到預期 ROI</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">⚠️</div>
+                    <div class="stat-label">上下文工程是解決之道</div>
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: 2rem; max-width: 900px; margin-left: auto; margin-right: auto;">
+                <p style="text-align: center; font-size: 1.1rem;">
+                    <span class="highlight">上下文工程</span>不是「锦上添花」，<br>
+                    而是讓 AI 從「能用」變成「好用」的必經之路。
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide 11: Evolution -->
+        <div class="slide" id="slide11">
+            <h2>從提示詞到上下文工程的進化</h2>
+            
+            <div style="width: 100%; max-width: 600px; height: 300px; margin: 1rem auto; position: relative;">
+                <canvas id="spiralCanvas" width="600" height="300"></canvas>
+            </div>
+            
+            <div class="evolution-container">
+                <div class="evolution-stage">
+                    <div class="stage-level">Lv.1</div>
+                    <div class="stage-name">提示詞</div>
+                    <div class="stage-desc">靠靈感和運氣，每次結果都不同</div>
+                </div>
+                <div class="evolution-stage">
+                    <div class="stage-level">Lv.2</div>
+                    <div class="stage-name">精準提示</div>
+                    <div class="stage-desc">學會寫更好的問題，但還是不穩定</div>
+                </div>
+                <div class="evolution-stage">
+                    <div class="stage-level">Lv.3</div>
+                    <div class="stage-name">上下文工程</div>
+                    <div class="stage-desc">可複製、可審核、可迭代的機制</div>
+                </div>
+            </div>
+            
+            <p style="margin-top: 2rem; font-size: 1.3rem; color: var(--yellow);">
+                這是一個<strong>人與 AI 共同進化</strong>的過程！
+            </p>
+        </div>
+
+        <!-- Slide 12: Thank You -->
+        <div class="slide" id="slide12">
+            <div class="thank-content" style="text-align: center;">
+                <h1>感謝觀看！</h1>
+                <img src="assets/bilibili_logo.png" alt="Bilibili" class="bilibili-logo" style="margin: 2rem 0;">
+                <p class="cta-text" style="margin: 2rem 0;">點個關注，上車不迷路！</p>
+                <p class="channel-info" style="font-size: 1.5rem;">
+                    <a href="https://space.bilibili.com/3546854541232968" class="channel-link" target="_blank">小赫</a></p><p style="font-size: 1.2rem; color: rgba(255, 255, 255, 0.8); margin-top: 0.5rem;">space.bilibili.com/3546854541232968
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="page-indicator">
+        <span id="current-slide">1</span> / 12
+    </div>
+    <div class="nav-controls">
+        <button class="nav-btn" onclick="prevSlide()">← 上一頁</button>
+        <button class="nav-btn" onclick="nextSlide()">下一頁 →</button>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 12;
+
+        function showSlide(n) {
+            const slides = document.querySelectorAll('.slide');
+            if (n > totalSlides) currentSlide = 1;
+            if (n < 1) currentSlide = totalSlides;
+            
+            slides.forEach(slide => slide.classList.remove('active'));
+            slides[currentSlide - 1].classList.add('active');
+            document.getElementById('current-slide').textContent = currentSlide;
+        }
+
+        function nextSlide() {
+            currentSlide++;
+            showSlide(currentSlide);
+        }
+
+        function prevSlide() {
+            currentSlide--;
+            showSlide(currentSlide);
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                prevSlide();
+            } else if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // Modal functions
+        const knowledgeBase = {
+            context_v1: {
+                title: 'V1.0 基礎版上下文',
+                content: `<h3>角色 (Role)</h3>
+<p>你是「PLAUD NOTE」的官方客服專家，風格親切、專業、自信。你對產品的每一個功能都瞭如指掌，並且能用簡潔的語言向潛在用戶解釋產品價值。</p>
+
+<h3>知識 (Knowledge)</h3>
+<ul><li><strong>產品定位</strong>: PLAUD NOTE 是一款結合了超薄硬件和 ChatGPT 技術的 AI 語音記錄器，定位為「會思考的錄音夥伴」。</li><li><strong>核心功能 1 - 錄音</strong>: 設備超薄（僅 0.02 英寸厚，30g 重），可磁吸在手機上錄製通話，也可單獨作為會議錄音筆使用。電池續航可達 30 小時連續錄音。</li><li><strong>核心功能 2 - AI 處理</strong>: 錄音後，專屬 App 可自動將語音轉錄為文字稿（支持 50+ 種語言），並一鍵生成結構化的摘要、待辦事項和心智圖 (Mind Map)。</li><li><strong>核心功能 3 - 智能問答</strong>: 用戶可以直接向 AI 提問（例如「這次會議的關鍵決策是什麼？」），AI 會基於錄音內容給出精準答案。</li><li><strong>免費方案</strong>: 提供包含 300 分鐘轉錄時長的免費試用版，讓用戶零成本體驗核心功能。</li></ul>
+
+<h3>規則 (Rules)</h3>
+<ul><li>必須突出「AI 賦能的生產力工具」這一核心定位，而不是簡單的錄音設備。</li><li>清晰地介紹 2-3 個核心亮點，避免信息過載。</li><li>使用具體的數據和場景來增強說服力（如「30 小時續航」、「50+ 種語言」）。</li><li>結尾時，一定要引導用戶嘗試免費版或訪問官網查看案例。</li><li>語氣保持專業但不冷漠，親切但不隨意。</li></ul>
+
+<h3>目標 (Goal)</h3>
+<p>回覆潛在用戶的首次諮詢，解答其核心疑問（產品差異化和亮點），並通過展示價值來激發其試用興趣，最終引導其採取行動（試用或訪問官網）。</p>
+
+<h3>用戶問題</h3>
+<p style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px; font-style: italic;">你好，我對你們的 PLAUD NOTE 很感興趣，它跟市面上其他筆記軟體有什麼不同？主要亮點是什麼？</p>
+
+<h3>AI 回覆</h3>
+<div style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px; white-space: pre-wrap;">親愛的用戶您好，
+
+感謝您對「PLAUD NOTE」的關注！我們不僅僅是錄音設備，更是一個「AI 賦能的生產力工具」。
+
+與市面上其他產品相比，我們的核心差異在於「一步到位」的智能處理：
+
+1. **輕鬆錄音**：超薄設計（僅 0.02 英寸厚），可磁吸在手機上清晰錄製通話，或單獨作為會議錄音筆使用，續航長達 30 小時。
+
+2. **AI 自動化處理**：錄音結束後，我們的 App 會利用 ChatGPT 技術自動將語音轉為文字（支持 50+ 種語言），並為您整理出精華摘要、待辦事項和心智圖，省去您手動整理的大量時間。
+
+3. **智能問答**：您還可以直接向 AI 提問，例如「這次會議的關鍵決策是什麼？」，AI 會基於錄音內容給出精準答案。
+
+我們提供 300 分鐘免費轉錄時長，誠摯邀請您親身體驗它的不同！
+
+歡迎訪問我們的官網，查看更多實際應用場景。
+
+祝您有美好的一天！
+PLAUD NOTE 客服團隊</div>`
+            },
+            context_v2: {
+                title: 'V2.0 進化版上下文',
+                content: `<h3>基礎上下文（同 V1.0）</h3>
+<p>角色、知識、規則、目標保持不變</p>
+
+<h3>新增：歷史對話 (Conversation History) ⭐</h3>
+<p>包含用戶的首次諮詢郵件和 AI 的第一次回覆，確保 AI 知道對話的上下文，避免重複或不連貫。</p>
+
+<h3>新增：隱私與安全知識 ⭐</h3>
+<ul><li><strong>公司背景</strong>: PLAUD 的母公司 Plaud Inc. 是一家在美國註冊的公司，遵循美國及國際數據保護法規。</li><li><strong>數據隱私政策</strong>: 我們嚴格遵守全球數據保護標準（如 GDPR、CCPA）。所有個人數據都經過端到端加密處理，只有用戶本人可以訪問。我們的服務器位於美國，採用 AWS 的安全基礎設施。</li><li><strong>模型訓練政策</strong>: 我們在隱私政策中明確承諾：絕不會使用用戶的私人錄音內容來訓練我們的公開 AI 模型。任何數據處理都必須得到用戶的明確授權。用戶的數據完全屬於用戶自己。</li><li><strong>數據導入功能</strong>: 目前 PLAUD NOTE 主要專注於語音錄製和 AI 處理。我們支援標準的音頻文件導入（如 MP3、WAV）。關於從 Notion 等筆記軟體導入文本內容的功能，目前尚未支持，但已在我們的產品路線圖中，預計將在未來的版本中推出。</li></ul>
+
+<h3>用戶追問</h3>
+<p style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px; font-style: italic;">謝謝你的回覆！聽起來很棒。我想再問一下，我的筆記資料是安全的嗎？你們會用我的資料去訓練模型嗎？還有，它支援匯入我目前在其他軟體（例如 Notion）的筆記嗎？</p>
+
+<h3>AI 回覆</h3>
+<div style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px; white-space: pre-wrap;">您好，很高興能為您解答！
+
+關於您的疑慮，請完全放心：
+
+**數據安全與隱私**
+我們非常重視用戶的數據安全。您的所有錄音和文字稿都會經過端到端加密，只有您本人可以訪問。我們的母公司在美國註冊，嚴格遵守 GDPR 和 CCPA 等國際數據保護法規。
+
+更重要的是，我們在隱私政策中明確承諾：**絕不會使用您的個人錄音內容來訓練我們的 AI 模型**。任何數據處理都必須得到您的明確授權。您的數據永遠屬於您自己。
+
+**關於數據導入**
+目前，PLAUD NOTE 主要專注於語音錄製和 AI 智能處理。我們支持標準音頻文件（如 MP3、WAV）的導入。
+
+至於您提到的從 Notion 等筆記軟體導入文本內容的功能，這是一個很好的建議！雖然目前尚未支持，但我們已將其納入產品路線圖，計劃在未來版本中推出。
+
+如果您還有任何疑問，隨時歡迎與我們聯繫。期待您的試用！
+
+祝好，
+PLAUD NOTE 客服團隊</div>`
+            },
+            kb1: {
+                title: '📖 故事背景',
+                content: `
+                    <h3>基於《西遊記》的文化背景</h3>
+                    <p>《黑神話：悟空》以中國古典名著《西遊記》為藍本，講述了孫悟空在取經之後的故事。遊戲並非完全復刻原著，而是在尊重原著的基礎上進行了創新性的改編。</p>
+                    
+                    <h3>關鍵詞 (Keywords)</h3>
+                    <p>西遊記、孫悟空、神話、中國文化</p>
+                    
+                    <h3>來源 (Source)</h3>
+                    <p>遊戲官方設定集、《西遊記》原著</p>
+                `
+            },
+            kb2: {
+                title: '🎨 美術風格',
+                content: `
+                    <h3>採用虛幻引擎5打造的視覺盛宴</h3>
+                    <p>遊戲使用虛幻引擎5（Unreal Engine 5）開發，呈現出極致寫實的中國風場景。從山西的懸空寺到四川的峨眉山，每個場景都經過精心考據和設計。</p>
+                    
+                    <h3>關鍵詞 (Keywords)</h3>
+                    <p>中國風、寫實、UE5、場景設計</p>
+                    
+                    <h3>來源 (Source)</h3>
+                    <p>遊戲科學官方訪談、技術演示視頻</p>
+                `
+            },
+            kb3: {
+                title: '👹 怪物設計',
+                content: `
+                    <h3>每個妖怪都有獨特的文化背景</h3>
+                    <p>遊戲中的妖怪不僅僅是戰鬥對象，每一個都有自己的故事和文化背景。從《西遊記》中的經典妖怪到中國民間傳說中的神話生物，設計團隊進行了大量的文化研究。</p>
+                    
+                    <h3>關鍵詞 (Keywords)</h3>
+                    <p>妖怪、BOSS、神話生物、文化考據</p>
+                    
+                    <h3>來源 (Source)</h3>
+                    <p>《山海經》、《西遊記》、民間傳說</p>
+                `
+            },
+            kb4: {
+                title: '⚔️ 戰鬥系統',
+                content: `
+                    <h3>融合動作與策略的戰鬥體驗</h3>
+                    <p>戰鬥系統結合了動作遊戲的爽快感和策略遊戲的深度。玩家需要觀察敵人的攻擊模式，選擇合適的法術和技能組合。72變、金箍棒、筋斗雲等經典元素都被巧妙融入戰鬥系統。</p>
+                    
+                    <h3>關鍵詞 (Keywords)</h3>
+                    <p>動作、策略、技能、72變</p>
+                    
+                    <h3>來源 (Source)</h3>
+                    <p>遊戲實機演示、開發者訪談</p>
+                `
+            },
+            kb5: {
+                title: '🎵 音樂配樂',
+                content: `
+                    <h3>傳統與現代結合的音樂體驗</h3>
+                    <p>遊戲配樂由知名作曲家操刀，將中國傳統樂器（如古箏、琵琶、二胡）與現代交響樂完美融合。每個場景都有專屬的音樂主題，營造出濃厚的氛圍感。</p>
+                    
+                    <h3>關鍵詞 (Keywords)</h3>
+                    <p>中國樂器、交響樂、配樂、氛圍</p>
+                    
+                    <h3>來源 (Source)</h3>
+                    <p>遊戲原聲帶、作曲家訪談</p>
+                `
+            },
+            kb6: {
+                title: '🌏 文化輸出',
+                content: `
+                    <h3>向世界展示中國神話的魅力</h3>
+                    <p>《黑神話：悟空》不僅是一款遊戲，更是中國文化的一次全球性展示。遊戲在海外獲得了極高的關注度，讓全世界的玩家通過遊戲了解中國的神話故事和文化內涵。</p>
+                    
+                    <h3>關鍵詞 (Keywords)</h3>
+                    <p>全球影響、中國文化、文化輸出</p>
+                    
+                    <h3>來源 (Source)</h3>
+                    <p>國際媒體報導、玩家評論</p>
+                `
+            }
+        };
+
+        function showModal(kbId) {
+            const modal = document.getElementById('modal');
+            const modalBody = document.getElementById('modal-body');
+            const kb = knowledgeBase[kbId];
+            
+            if (kb) {
+                modalBody.innerHTML = `<h2>${kb.title}</h2>${kb.content}`;
+                modal.classList.add('active');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        // Close modal on background click
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target.id === 'modal') {
+                closeModal();
+            }
+        });
+
+
+        // Initialize chart on slide 10
+        function initChart() {
+            const ctx = document.getElementById('aiDataChart');
+            if (!ctx) return;
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['面臨可靠性問題', '缺乏上下文失敗', '達到 ROI'],
+                    datasets: [{
+                        data: [50, 75, 25],
+                        backgroundColor: [
+                            'rgba(228, 0, 75, 0.8)',
+                            'rgba(237, 119, 90, 0.8)',
+                            'rgba(250, 214, 145, 0.8)'
+                        ],
+                        borderColor: [
+                            '#E4004B',
+                            '#ED775A',
+                            '#FAD691'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#ffffff',
+                                font: {
+                                    size: 14
+                                },
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.parsed + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Call initChart after delay and on slide 10 navigation
+        setTimeout(initChart, 500);
+        
+        const originalNextSlide = nextSlide;
+        const originalPrevSlide = prevSlide;
+        
+        nextSlide = function() {
+            originalNextSlide();
+            if (currentSlide === 10) setTimeout(initChart, 100);
+        };
+        
+        prevSlide = function() {
+            originalPrevSlide();
+            if (currentSlide === 10) setTimeout(initChart, 100);
+        };
+
+        // Animated Spiral for Slide 11
+        let spiralAnimationId = null;
+        
+        function drawSpiral() {
+            const canvas = document.getElementById('spiralCanvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const centerX = 300;
+            const centerY = 150;
+            let angle = 0;
+            
+            function animate() {
+                ctx.clearRect(0, 0, 600, 300);
+                
+                // Draw spiral path
+                ctx.beginPath();
+                ctx.lineWidth = 3;
+                
+                for (let i = 0; i < 360 * 3; i++) {
+                    const rad = (i) * Math.PI / 180;
+                    const r = i / 3;
+                    const x = centerX + r * Math.cos(rad);
+                    const y = centerY + r * Math.sin(rad);
+                    
+                    // Gradient color based on progress
+                    const progress = i / (360 * 3);
+                    if (progress < 0.33) {
+                        ctx.strokeStyle = '#E4004B';
+                    } else if (progress < 0.66) {
+                        ctx.strokeStyle = '#ED775A';
+                    } else {
+                        ctx.strokeStyle = '#FAD691';
+                    }
+                    
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                    
+                    if (i % 30 === 0) {
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.moveTo(x, y);
+                    }
+                }
+                ctx.stroke();
+                
+                // Draw moving dot
+                const dotAngle = (angle * 3) * Math.PI / 180;
+                const dotRadius = (angle * 3) / 3;
+                const dotX = centerX + dotRadius * Math.cos(dotAngle);
+                const dotY = centerY + dotRadius * Math.sin(dotAngle);
+                
+                ctx.beginPath();
+                ctx.arc(dotX, dotY, 10, 0, Math.PI * 2);
+                ctx.fillStyle = '#FFD700';
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#FFD700';
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                angle += 0.8;
+                if (angle > 360 * 3) angle = 0;
+                
+                spiralAnimationId = requestAnimationFrame(animate);
+            }
+            
+            animate();
+        }
+        
+        // Update navigation to trigger spiral on slide 11
+        const originalNextSlide2 = nextSlide;
+        const originalPrevSlide2 = prevSlide;
+        
+        nextSlide = function() {
+            if (spiralAnimationId) cancelAnimationFrame(spiralAnimationId);
+            originalNextSlide2();
+            if (currentSlide === 10) setTimeout(initChart, 100);
+            if (currentSlide === 11) setTimeout(drawSpiral, 100);
+        };
+        
+        prevSlide = function() {
+            if (spiralAnimationId) cancelAnimationFrame(spiralAnimationId);
+            originalPrevSlide2();
+            if (currentSlide === 10) setTimeout(initChart, 100);
+            if (currentSlide === 11) setTimeout(drawSpiral, 100);
+        };
+
+        // Initialize
+        showSlide(currentSlide);
+        if (currentSlide === 11) setTimeout(drawSpiral, 100);
+    </script>
+</body>
+</html>
+

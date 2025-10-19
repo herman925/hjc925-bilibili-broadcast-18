@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>從「對牛彈琴」到「心有靈犀」：上下文工程入門</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --color-primary: #E4004B;
+            --color-secondary: #ED775A;
+            --color-accent: #FAD691;
+            --color-neutral: #C9CDCF;
+            --color-dark: #2a2a2a;
+            --color-light: #ffffff;
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--color-dark);
+            overflow: hidden;
+        }
+
+        /* Safe Frame Container */
+        .presentation-wrapper {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+        }
+
+        .presentation {
+            width: 100%;
+            height: 100%;
+            max-width: 1920px;
+            max-height: 1080px;
+            position: relative;
+            aspect-ratio: 16 / 9;
+            background: var(--color-dark);
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+        }
+
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .slide.active {
+            display: flex;
+            opacity: 1;
+            z-index: 1;
+        }
+
+        /* Safe Content Area */
+        .slide-content {
+            width: 100%;
+            height: 100%;
+            padding: 5% 8%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Typography */
+        h1 {
+            font-size: clamp(48px, 5vw, 80px);
+            font-weight: 700;
+            color: var(--color-light);
+            text-align: center;
+            margin-bottom: 30px;
+            line-height: 1.2;
+        }
+
+        h2 {
+            font-size: clamp(40px, 4vw, 64px);
+            font-weight: 600;
+            color: var(--color-light);
+            text-align: center;
+            margin-bottom: 40px;
+            line-height: 1.3;
+        }
+
+        h3 {
+            font-size: clamp(32px, 3vw, 48px);
+            font-weight: 600;
+            color: var(--color-light);
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: clamp(24px, 2vw, 36px);
+            color: rgba(255, 255, 255, 0.95);
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: clamp(28px, 2.5vw, 42px);
+            color: var(--color-accent);
+            font-weight: 400;
+        }
+
+        /* Navigation */
+        .nav-controls {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            z-index: 1000;
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav-btn {
+            background: var(--color-primary);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: var(--color-secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(228, 0, 75, 0.4);
+        }
+
+        .slide-number {
+            position: fixed;
+            bottom: 40px;
+            left: 40px;
+            color: var(--color-neutral);
+            font-size: 20px;
+            z-index: 1000;
+            font-weight: 600;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 80%;
+            max-height: 80%;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 2px solid var(--color-primary);
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--color-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            color: var(--color-secondary);
+            transform: scale(1.2);
+        }
+
+        .modal-content h3 {
+            color: var(--color-primary);
+            margin-bottom: 20px;
+            font-size: 32px;
+        }
+
+        .modal-content h4 {
+            color: var(--color-secondary);
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 26px;
+        }
+
+        .modal-content p, .modal-content li {
+            font-size: 20px;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+            text-align: left;
+            margin-bottom: 15px;
+        }
+
+        .modal-content ul {
+            padding-left: 30px;
+        }
+
+        .modal-content .highlight {
+            background: rgba(228, 0, 75, 0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--color-accent);
+            font-weight: 600;
+        }
+
+        /* Clickable Elements */
+        .clickable {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .clickable:hover {
+            transform: scale(1.05);
+            filter: brightness(1.2);
+        }
+
+        .clickable::after {
+            content: "點擊查看詳情";
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+            color: var(--color-accent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .clickable:hover::after {
+            opacity: 1;
+        }
+
+        /* Slide 1 - Cover */
+        #slide1 {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+        }
+
+        .intro-box {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 85%;
+            margin-top: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .intro-item {
+            font-size: clamp(24px, 2.2vw, 34px);
+            color: white;
+            margin: 25px 0;
+            text-align: left;
+            line-height: 1.7;
+        }
+
+        .intro-highlight {
+            color: var(--color-accent);
+            font-weight: 700;
+            font-size: clamp(26px, 2.4vw, 38px);
+        }
+
+        /* Slide 2 - GIGO */
+        #slide2 {
+            background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-accent) 100%);
+        }
+
+        .gigo-visual {
+            width: 60%;
+            max-width: 700px;
+            height: auto;
+            margin: 40px 0;
+            position: relative;
+        }
+
+        .gigo-text {
+            font-size: clamp(56px, 6vw, 96px);
+            font-weight: 700;
+            color: var(--color-dark);
+            letter-spacing: 8px;
+            text-shadow: 3px 3px 0 rgba(255, 255, 255, 0.3);
+            margin: 40px 0;
+        }
+
+        /* Slide 3 - Framework */
+        #slide3 {
+            background: linear-gradient(135deg, var(--color-primary) 0%, #8B0040 100%);
+        }
+
+        .framework-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            max-width: 85%;
+            margin: 40px 0;
+        }
+
+        .framework-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 35px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .framework-card:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-icon {
+            font-size: clamp(48px, 5vw, 72px);
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: clamp(28px, 2.8vw, 42px);
+            font-weight: 600;
+            color: white;
+            margin-bottom: 12px;
+        }
+
+        .card-subtitle {
+            font-size: clamp(20px, 2vw, 30px);
+            color: var(--color-accent);
+        }
+
+        /* Slide 4 - Case 1 Intro */
+        #slide4 {
+            background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-accent) 100%);
+        }
+
+        .case-layout {
+            display: flex;
+            align-items: center;
+            gap: 50px;
+            max-width: 90%;
+            margin: 30px 0;
+        }
+
+        .product-image {
+            width: 45%;
+            max-width: 450px;
+            height: auto;
+            object-fit: contain;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+        }
+
+        .learning-box {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 20px;
+            padding: 35px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .learning-item {
+            font-size: clamp(22px, 2.2vw, 32px);
+            color: white;
+            margin: 20px 0;
+            text-align: left;
+            line-height: 1.6;
+        }
+
+        .learning-item strong {
+            color: var(--color-primary);
+            display: block;
+            margin-bottom: 8px;
+            font-size: clamp(24px, 2.4vw, 34px);
+        }
+
+        /* Slide 5 - Context Building */
+        #slide5 {
+            background: linear-gradient(135deg, #8B0040 0%, var(--color-primary) 100%);
+        }
+
+        .context-comparison {
+            display: flex;
+            gap: 40px;
+            max-width: 90%;
+            margin: 30px 0;
+        }
+
+        .context-column {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            padding: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .context-title {
+            font-size: clamp(26px, 2.6vw, 38px);
+            font-weight: 600;
+            color: var(--color-accent);
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .context-item {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 18px;
+            margin: 15px 0;
+            font-size: clamp(18px, 1.8vw, 26px);
+            color: white;
+            line-height: 1.5;
+            text-align: left;
+        }
+
+        .context-label {
+            color: var(--color-secondary);
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: clamp(20px, 2vw, 28px);
+        }
+
+        /* Slide 6 - Summary */
+        #slide6 {
+            background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-secondary) 100%);
+        }
+
+        .summary-box {
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 20px;
+            padding: 35px;
+            max-width: 85%;
+            margin: 25px 0;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .summary-title {
+            font-size: clamp(28px, 2.8vw, 42px);
+            font-weight: 600;
+            color: var(--color-primary);
+            margin-bottom: 18px;
+            text-align: left;
+        }
+
+        .summary-text {
+            font-size: clamp(22px, 2.2vw, 32px);
+            color: var(--color-dark);
+            line-height: 1.7;
+            text-align: left;
+        }
+
+        /* Slide 7 - Case 2 Intro */
+        #slide7 {
+            background: linear-gradient(135deg, var(--color-primary) 0%, #2a2a2a 100%);
+            position: relative;
+        }
+
+        .game-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.25;
+            z-index: 0;
+        }
+
+        .overlay-box {
+            position: relative;
+            z-index: 1;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(15px);
+            border-radius: 25px;
+            padding: 50px;
+            max-width: 85%;
+            border: 2px solid var(--color-primary);
+        }
+
+        /* Slide 8 - Knowledge Base */
+        #slide8 {
+            background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%);
+        }
+
+        .kb-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            max-width: 90%;
+            margin: 30px 0;
+        }
+
+        .kb-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .kb-card:hover {
+            transform: translateY(-8px);
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
+        }
+
+        .kb-title {
+            font-size: clamp(20px, 2vw, 28px);
+            font-weight: 600;
+            color: var(--color-accent);
+            margin-bottom: 12px;
+        }
+
+        .kb-keywords {
+            font-size: clamp(14px, 1.4vw, 20px);
+            color: rgba(255, 255, 255, 0.7);
+            font-style: italic;
+            margin-bottom: 12px;
+        }
+
+        .kb-preview {
+            font-size: clamp(16px, 1.6vw, 22px);
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.5;
+            text-align: left;
+        }
+
+        /* Slide 9 - Case 2 Summary */
+        #slide9 {
+            background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-secondary) 100%);
+        }
+
+        /* Slide 10 - Data */
+        #slide10 {
+            background: linear-gradient(135deg, var(--color-primary) 0%, #4a0028 100%);
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            max-width: 90%;
+            margin: 35px 0;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 35px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: scale(1.05);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-number {
+            font-size: clamp(56px, 6vw, 88px);
+            font-weight: 700;
+            color: var(--color-accent);
+            margin-bottom: 18px;
+        }
+
+        .stat-label {
+            font-size: clamp(20px, 2vw, 28px);
+            color: white;
+            line-height: 1.6;
+        }
+
+        /* Slide 11 - Evolution */
+        #slide11 {
+            background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%);
+        }
+
+        .evolution-flow {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            max-width: 90%;
+            margin: 40px 0;
+            gap: 20px;
+        }
+
+        .evolution-stage {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            flex: 1;
+            transition: all 0.3s ease;
+        }
+
+        .evolution-stage:hover {
+            transform: scale(1.08);
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .stage-number {
+            font-size: clamp(32px, 3.2vw, 48px);
+            color: var(--color-accent);
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .stage-title {
+            font-size: clamp(24px, 2.4vw, 36px);
+            color: white;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .stage-desc {
+            font-size: clamp(18px, 1.8vw, 26px);
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.5;
+        }
+
+        /* Slide 12 - Thank You */
+        #slide12 {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+        }
+
+        .thank-content {
+            text-align: center;
+        }
+
+        .bilibili-logo {
+            width: 280px;
+            height: auto;
+            margin: 35px 0;
+            filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.4));
+        }
+
+        .qr-box {
+            width: 280px;
+            height: 280px;
+            background: white;
+            border-radius: 20px;
+            margin: 35px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .cta-text {
+            font-size: clamp(36px, 3.6vw, 52px);
+            font-weight: 700;
+            color: var(--color-accent);
+            margin: 25px 0;
+        }
+
+        .channel-link {
+            font-size: clamp(20px, 2vw, 28px);
+            color: white;
+            margin: 20px 0;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation-wrapper">
+        <div class="presentation">
+            <!-- Slide 1: Cover -->
+            <div class="slide active" id="slide1">
+                <div class="slide-content">
+                    <h1>從「對牛彈琴」到「心有靈犀」</h1>
+                    <p class="subtitle">AI 溝通的藝術：上下文工程入門</p>
+                    
+                    <div class="intro-box">
+                        <div class="intro-item">
+                            她：「氣死我了！<strong>我正在做的那個項目</strong>，客戶又提無理要求...」
+                        </div>
+                        <div class="intro-item">
+                            你：「啊？...多喝熱水？」
+                        </div>
+                        <div class="intro-item intro-highlight" style="margin-top: 35px;">
+                            如果缺少「上下文」，溝通就是一場災難
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 2: GIGO -->
+            <div class="slide" id="slide2">
+                <div class="slide-content">
+                    <h2>你對 AI 的指令<br/>是否也是一堆「垃圾」？</h2>
+                    
+                    <div class="gigo-text">GIGO</div>
+                    
+                    <p style="font-size: clamp(32px, 3.2vw, 48px); font-weight: 600; margin: 30px 0;">
+                        Garbage In, Garbage Out
+                    </p>
+                    <p style="max-width: 80%; font-size: clamp(24px, 2.4vw, 36px);">
+                        模糊的指令 → 不穩定的結果
+                    </p>
+                </div>
+            </div>
+
+            <!-- Slide 3: Context Engineering -->
+            <div class="slide" id="slide3">
+                <div class="slide-content">
+                    <h2>上下文工程<br/>Context Engineering</h2>
+                    <p class="subtitle">為 AI 搭建「超級工作台」</p>
+                    
+                    <div class="framework-grid">
+                        <div class="framework-card">
+                            <div class="card-icon">🎭</div>
+                            <div class="card-title">角色 Role</div>
+                            <div class="card-subtitle">你是誰？</div>
+                        </div>
+                        
+                        <div class="framework-card">
+                            <div class="card-icon">📚</div>
+                            <div class="card-title">知識 Knowledge</div>
+                            <div class="card-subtitle">你需要知道什麼？</div>
+                        </div>
+                        
+                        <div class="framework-card">
+                            <div class="card-icon">📋</div>
+                            <div class="card-title">規則 Rules</div>
+                            <div class="card-subtitle">你該怎麼做？</div>
+                        </div>
+                        
+                        <div class="framework-card">
+                            <div class="card-icon">🎯</div>
+                            <div class="card-title">目標 Goal</div>
+                            <div class="card-subtitle">你的任務是什麼？</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 4: Case 1 Intro -->
+            <div class="slide" id="slide4">
+                <div class="slide-content">
+                    <h2>案例一：AI 客服</h2>
+                    <p class="subtitle">PLAUD NOTE 產品諮詢</p>
+                    
+                    <div class="case-layout">
+                        <img src="assets/plaud_note.jpg" alt="PLAUD NOTE" class="product-image clickable" onclick="showModal('plaud-intro')">
+                        
+                        <div class="learning-box">
+                            <div class="learning-item">
+                                <strong>學習點 1</strong>
+                                基礎上下文搭建<br/>判斷需求 + 組裝四大元素
+                            </div>
+                            <div class="learning-item">
+                                <strong>學習點 2</strong>
+                                對話中的迭代<br/>更新上下文處理追問
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 5: Context Building -->
+            <div class="slide" id="slide5">
+                <div class="slide-content">
+                    <h2>上下文的搭建與迭代</h2>
+                    
+                    <div class="context-comparison">
+                        <div class="context-column clickable" onclick="showModal('plaud-v1')">
+                            <div class="context-title">V1.0 首次諮詢</div>
+                            <div class="context-item">
+                                <div class="context-label">角色</div>
+                                PLAUD NOTE 客服專家
+                            </div>
+                            <div class="context-item">
+                                <div class="context-label">知識</div>
+                                產品核心功能與亮點
+                            </div>
+                            <div class="context-item">
+                                <div class="context-label">規則</div>
+                                強調 AI 賦能，引導官網
+                            </div>
+                            <div class="context-item">
+                                <div class="context-label">目標</div>
+                                解答疑問，建立信任
+                            </div>
+                        </div>
+                        
+                        <div class="context-column clickable" onclick="showModal('plaud-v2')">
+                            <div class="context-title">V2.0 隱私追問</div>
+                            <div class="context-item">
+                                <div class="context-label">+ 歷史對話</div>
+                                包含首次諮詢內容
+                            </div>
+                            <div class="context-item">
+                                <div class="context-label">+ 隱私知識</div>
+                                數據加密、不訓練模型、合規運營
+                            </div>
+                            <div class="context-item" style="background: rgba(228, 0, 75, 0.3); margin-top: 20px;">
+                                <div class="context-label">✓ 輸出</div>
+                                精準、令人信服的回覆
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 6: Case 1 Summary -->
+            <div class="slide" id="slide6">
+                <div class="slide-content">
+                    <h2>案例一總結</h2>
+                    
+                    <div class="summary-box">
+                        <div class="summary-title">重點 1：判斷真實意圖</div>
+                        <div class="summary-text">
+                            準確理解提問者的真實意圖——他想解決什麼問題？需要什麼類型的回答？
+                        </div>
+                    </div>
+                    
+                    <div class="summary-box">
+                        <div class="summary-title">重點 2：持續迭代更新</div>
+                        <div class="summary-text">
+                            在連續對話中，把新的信息（聊天記錄、新問題）不斷加回上下文，讓 AI 保持聰明和連貫。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 7: Case 2 Intro -->
+            <div class="slide" id="slide7">
+                <img src="assets/black_myth_wukong.jpeg" alt="Black Myth Wukong" class="game-bg">
+                <div class="slide-content">
+                    <div class="overlay-box">
+                        <h2>案例二：領域專家</h2>
+                        <p class="subtitle" style="font-size: clamp(28px, 2.8vw, 40px); margin-bottom: 35px;">
+                            《黑神話：悟空》文化背景分析
+                        </p>
+                        
+                        <div class="learning-box" style="background: rgba(0, 0, 0, 0.4);">
+                            <div class="learning-item">
+                                <strong>學習點 1</strong>
+                                多篇幅上下文整合<br/>組織多個來源的知識片段
+                            </div>
+                            <div class="learning-item">
+                                <strong>學習點 2</strong>
+                                知識庫初步構建<br/>用元數據讓知識可檢索
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 8: Knowledge Base -->
+            <div class="slide" id="slide8">
+                <div class="slide-content">
+                    <h2>構建專家知識庫</h2>
+                    <p class="subtitle">帶有「索引」的結構化知識</p>
+                    
+                    <div class="kb-grid">
+                        <div class="kb-card clickable" onclick="showModal('kb-story')">
+                            <div class="kb-title">故事內核</div>
+                            <div class="kb-keywords">西遊記、後傳、六根</div>
+                            <div class="kb-preview">遊戲講述「天命人」尋找大聖散落的六根...</div>
+                        </div>
+                        
+                        <div class="kb-card clickable" onclick="showModal('kb-art')">
+                            <div class="kb-title">美術風格</div>
+                            <div class="kb-keywords">山西古建、實地掃描</div>
+                            <div class="kb-preview">實地考察並掃描中國古建築，高度還原...</div>
+                        </div>
+                        
+                        <div class="kb-card clickable" onclick="showModal('kb-monster')">
+                            <div class="kb-title">怪物設計</div>
+                            <div class="kb-keywords">山海經、藝術再創作</div>
+                            <div class="kb-preview">融合《山海經》形象，充滿壓迫感...</div>
+                        </div>
+                        
+                        <div class="kb-card clickable" onclick="showModal('kb-gameplay')">
+                            <div class="kb-title">戰鬥系統</div>
+                            <div class="kb-keywords">魂類、72變、棍法</div>
+                            <div class="kb-preview">結合魂類玩法與72變系統...</div>
+                        </div>
+                        
+                        <div class="kb-card clickable" onclick="showModal('kb-music')">
+                            <div class="kb-title">音樂設計</div>
+                            <div class="kb-keywords">中國民樂、交響樂</div>
+                            <div class="kb-preview">傳統樂器與現代交響樂結合...</div>
+                        </div>
+                        
+                        <div class="kb-card clickable" onclick="showModal('kb-culture')">
+                            <div class="kb-title">文化輸出</div>
+                            <div class="kb-keywords">3A遊戲、全球關注</div>
+                            <div class="kb-preview">Steam 首日220萬在線，文化輸出里程碑...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 9: Case 2 Summary -->
+            <div class="slide" id="slide9">
+                <div class="slide-content">
+                    <h2>案例二總結</h2>
+                    
+                    <div class="summary-box">
+                        <div class="summary-title">重點 1：整合多源信息</div>
+                        <div class="summary-text">
+                            從多個來源收集信息並放入上下文，不要指望 AI 自己去「猜」或「搜索」。
+                        </div>
+                    </div>
+                    
+                    <div class="summary-box">
+                        <div class="summary-title">重點 2：添加元數據結構</div>
+                        <div class="summary-text">
+                            為知識添加「標題」、「關鍵詞」等元數據，是從「信息堆砌」走向「知識管理」的關鍵一步。
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 10: Industry Data -->
+            <div class="slide" id="slide10">
+                <div class="slide-content">
+                    <h2>為什麼必須掌握上下文工程？</h2>
+                    <p class="subtitle">2025 年企業 AI 採用現狀</p>
+                    
+                    <div class="data-grid">
+                        <div class="stat-card">
+                            <div class="stat-number">~50%</div>
+                            <div class="stat-label">企業面臨<br/>AI 輸出不穩定問題</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-number">25%</div>
+                            <div class="stat-label">AI 項目達到<br/>預期 ROI</div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-number">&lt;20%</div>
+                            <div class="stat-label">AI 項目實現<br/>全面規模化</div>
+                        </div>
+                    </div>
+                    
+                    <p style="font-size: clamp(24px, 2.4vw, 36px); margin-top: 40px; max-width: 85%;">
+                        <strong style="color: var(--color-accent);">上下文工程</strong>通過提供結構化、可追溯的信息，<br/>
+                        直接解決 AI 輸出不穩定的核心挑戰
+                    </p>
+                </div>
+            </div>
+
+            <!-- Slide 11: Evolution -->
+            <div class="slide" id="slide11">
+                <div class="slide-content">
+                    <h2>一場共同進化</h2>
+                    <p class="subtitle">從「對牛彈琴」到「心有靈犀」</p>
+                    
+                    <div class="evolution-flow">
+                        <div class="evolution-stage">
+                            <div class="stage-number">Lv.1</div>
+                            <div class="stage-title">提示詞</div>
+                            <div class="stage-desc">學習如何<br/>更好地「說話」</div>
+                        </div>
+                        
+                        <div class="evolution-stage">
+                            <div class="stage-number">Lv.2</div>
+                            <div class="stage-title">上下文工程</div>
+                            <div class="stage-desc">搭建有共同認知<br/>的場景</div>
+                        </div>
+                        
+                        <div class="evolution-stage">
+                            <div class="stage-number">Lv.∞</div>
+                            <div class="stage-title">協同智能</div>
+                            <div class="stage-desc">人類提供智慧<br/>AI 高效執行</div>
+                        </div>
+                    </div>
+                    
+                    <p style="font-size: clamp(24px, 2.4vw, 36px); margin-top: 40px; max-width: 80%;">
+                        從靠靈感，到靠機制<br/>
+                        從單向指令，到雙向理解
+                    </p>
+                </div>
+            </div>
+
+            <!-- Slide 12: Thank You -->
+            <div class="slide" id="slide12">
+                <div class="slide-content">
+                    <div class="thank-content">
+                        <h1>感謝觀看！</h1>
+                        
+                        <img src="assets/bilibili_logo.png" alt="Bilibili" class="bilibili-logo" 
+                             onerror="this.style.display='none';">
+                        
+                        <p class="cta-text">點個關注，上車不迷路！</p>
+                        
+                        <div class="qr-box">
+                            <div style="text-align: center; color: #333;">
+                                <div style="font-size: 42px; margin-bottom: 15px;">📱</div>
+                                <div style="font-size: 22px;">掃碼關注我的 B 站</div>
+                                <div style="font-size: 20px; color: #666; margin-top: 12px;">小赫</div>
+                            </div>
+                        </div>
+                        
+                        <div class="channel-link">
+                            https://space.bilibili.com/3546854541232968
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-plaud-intro" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('plaud-intro')">&times;</span>
+            <h3>PLAUD NOTE 產品介紹</h3>
+            <p><span class="highlight">PLAUD NOTE</span> 是一款結合了超薄硬件和 ChatGPT 技術的 AI 語音記錄器，定位為「會思考的錄音夥伴」。</p>
+            
+            <h4>核心功能</h4>
+            <ul>
+                <li><strong>錄音：</strong>超薄設計（僅 0.02 英寸厚，30g 重），可磁吸在手機上錄製通話，續航長達 30 小時</li>
+                <li><strong>AI 處理：</strong>自動將語音轉錄為文字（支持 50+ 種語言），一鍵生成摘要、待辦事項和心智圖</li>
+                <li><strong>智能問答：</strong>用戶可直接向 AI 提問，基於錄音內容獲得精準答案</li>
+                <li><strong>免費方案：</strong>提供 300 分鐘轉錄時長的免費試用版</li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="modal-plaud-v1" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('plaud-v1')">&times;</span>
+            <h3>首次諮詢 - 上下文 V1.0</h3>
+            
+            <h4>用戶提問</h4>
+            <p>「你好，我對你們的 PLAUD NOTE 很感興趣，它跟市面上其他筆記軟體有什麼不同？主要亮點是什麼？」</p>
+            
+            <h4>上下文設計</h4>
+            <p><strong>角色：</strong>PLAUD NOTE 的官方客服專家，風格親切、專業、自信</p>
+            
+            <p><strong>知識：</strong></p>
+            <ul>
+                <li>產品定位：AI 語音記錄器，「會思考的錄音夥伴」</li>
+                <li>核心功能：超薄硬件 + AI 轉錄 + 智能摘要 + 問答</li>
+                <li>差異化：30 小時續航、50+ 語言支持、300 分鐘免費試用</li>
+            </ul>
+            
+            <p><strong>規則：</strong></p>
+            <ul>
+                <li>突出「AI 賦能的生產力工具」定位</li>
+                <li>介紹 2-3 個核心亮點，避免信息過載</li>
+                <li>使用具體數據增強說服力</li>
+                <li>引導用戶試用或訪問官網</li>
+            </ul>
+            
+            <p><strong>目標：</strong>解答核心疑問，展示價值，激發試用興趣</p>
+        </div>
+    </div>
+
+    <div id="modal-plaud-v2" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('plaud-v2')">&times;</span>
+            <h3>客戶追問 - 上下文 V2.0（迭代）</h3>
+            
+            <h4>用戶追問</h4>
+            <p>「謝謝你的回覆！聽起來很棒。我想再問一下，我的筆記資料是安全的嗎？你們會用我的資料去訓練模型嗎？」</p>
+            
+            <h4>上下文更新</h4>
+            <p><strong>+ 歷史對話：</strong>包含用戶的首次諮詢和 AI 的第一次回覆，確保連貫性</p>
+            
+            <p><strong>+ 新增知識（隱私與安全）：</strong></p>
+            <ul>
+                <li><span class="highlight">公司背景：</span>Plaud Inc. 在美國註冊，遵循美國及國際數據保護法規</li>
+                <li><span class="highlight">數據隱私：</span>嚴格遵守 GDPR、CCPA，端到端加密，只有用戶可訪問</li>
+                <li><span class="highlight">模型訓練：</span>明確承諾絕不使用用戶私人錄音訓練公開 AI 模型</li>
+                <li><span class="highlight">數據歸屬：</span>用戶的數據完全屬於用戶自己</li>
+            </ul>
+            
+            <h4>學習點</h4>
+            <p>當用戶追問新問題時，原有上下文已不夠用。我們需要：</p>
+            <ul>
+                <li>加入歷史對話，保持連貫性</li>
+                <li>注入新的知識（隱私政策），確保回答有據可依</li>
+                <li>保持透明與誠實，建立信任</li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="modal-kb-story" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('kb-story')">&times;</span>
+            <h3>知識塊：故事內核</h3>
+            <p><strong>關鍵詞：</strong>西遊記、後傳、六根、天命人、黑暗敘事</p>
+            <p><strong>來源：</strong>遊戲官方設定集 + IGN 評測</p>
+            
+            <h4>詳細內容</h4>
+            <p>《黑神話：悟空》的故事並非直接改編《西遊記》原著，而是設定在「西遊」故事結束之後的世界。遊戲講述了一位被稱為「天命人」的主角，為了復活齊天大聖孫悟空，踏上尋找其散落的六根（頭髮、毫毛等）之旅。</p>
+            
+            <p>這個設定巧妙地避開了「重複經典」的陷阱，轉而探索了一個更黑暗、更成人化的敘事空間：如果孫悟空已經「死去」，那麼這個世界發生了什麼？誰是真正的敵人？取經之後的「真相」是什麼？</p>
+            
+            <p>這種「後傳」式的設定，既保留了對經典的敬意，又為創作者提供了充分的自由度，讓遊戲能夠探討權力、自由、命運等更深層的哲學主題。</p>
+        </div>
+    </div>
+
+    <div id="modal-kb-art" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('kb-art')">&times;</span>
+            <h3>知識塊：美術風格與場景設計</h3>
+            <p><strong>關鍵詞：</strong>山西古建、實地掃描、東方美學、虛幻引擎5、寫實主義</p>
+            <p><strong>來源：</strong>Game Science 開發者訪談 + Polygon 專題報導</p>
+            
+            <h4>詳細內容</h4>
+            <p>《黑神話：悟空》的美術風格是其最大的視覺亮點之一。開發團隊 Game Science 在製作過程中，實地考察並 3D 掃描了中國山西省的多處古建築，包括懸空寺、雲岡石窟、應縣木塔等世界文化遺產。</p>
+            
+            <p>這些建築的細節被高度還原在遊戲中，從木結構的榫卯結構、斗拱的精密設計，到石窟壁畫的風化痕跡，都展現出極高的考據精神。遊戲使用虛幻引擎 5 (Unreal Engine 5) 的 Nanite 和 Lumen 技術，實現了電影級的光影效果和材質細節。</p>
+            
+            <p>這種「寫實主義 + 東方美學」的結合，讓遊戲在視覺上既有西方 3A 遊戲的工業化水準，又保留了濃厚的中國文化氣質。玩家在遊戲中不僅是在「打怪」，更是在「遊覽」一座座活生生的中國古代建築博物館。</p>
+        </div>
+    </div>
+
+    <div id="modal-kb-monster" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('kb-monster')">&times;</span>
+            <h3>知識塊：怪物與角色設計</h3>
+            <p><strong>關鍵詞：</strong>山海經、妖怪、藝術再創作、壓迫感、文化符號</p>
+            <p><strong>來源：</strong>遊戲美術設定集 + Kotaku 分析文章</p>
+            
+            <h4>詳細內容</h4>
+            <p>遊戲中的妖怪設計深度融合了中國古籍《山海經》、《搜神記》等文獻中的形象，並進行了充滿現代感的藝術再創作。</p>
+            
+            <p>例如，遊戲中的「廣智」（一種多頭巨獸）參考了《山海經》中的「相柳」，但在設計上增加了更多的肌肉紋理、腐爛質感和動態表現，營造出強烈的視覺壓迫感。這些妖怪不再是傳統繪畫中扁平化的符號，而是具有真實重量感和威脅性的「生物」。</p>
+            
+            <p>同時，遊戲也保留了許多文化符號的原始意義。例如，「土地公」作為民間信仰中的基層神祇，在遊戲中扮演著「存檔點」和「商人」的角色，既符合其「守護一方土地」的傳統職能，又巧妙地融入了遊戲機制。</p>
+            
+            <p>這種「尊重傳統 + 大膽創新」的設計哲學，讓遊戲在文化傳承和現代娛樂之間找到了平衡點。</p>
+        </div>
+    </div>
+
+    <div id="modal-kb-gameplay" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('kb-gameplay')">&times;</span>
+            <h3>知識塊：戰鬥系統與玩法設計</h3>
+            <p><strong>關鍵詞：</strong>魂類、72變、棍法、動作遊戲、難度設計</p>
+            <p><strong>來源：</strong>Eurogamer 評測 + 玩家社群討論</p>
+            
+            <h4>詳細內容</h4>
+            <p>《黑神話：悟空》的戰鬥系統深受「魂類」遊戲（如《黑暗之魂》系列）的影響，強調觀察、閃避、反擊的節奏感，並設計了較高的難度曲線。</p>
+            
+            <p>但遊戲並非簡單的「魂類克隆」，而是加入了大量原創元素。最核心的是「72變」系統——玩家可以變身為遊戲中擊敗過的妖怪，繼承其部分能力。例如，變身為「廣智」可以噴射毒液，變身為「石猴」可以獲得更高的防禦力。這種系統讓戰鬥策略更加多樣化，也呼應了孫悟空「72般變化」的經典設定。</p>
+            
+            <p>此外，遊戲的棍法設計參考了中國武術中的「猴拳」和「棍術」，動作流暢且富有力量感。每一次揮棍都有明確的「收招」和「硬直」，這種設計讓戰鬥既有觀賞性，又有策略深度。</p>
+            
+            <p>這種「西方玩法框架 + 東方文化內核」的設計，讓遊戲在全球市場上既有熟悉感，又有新鮮感。</p>
+        </div>
+    </div>
+
+    <div id="modal-kb-music" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('kb-music')">&times;</span>
+            <h3>知識塊：音樂與聲音設計</h3>
+            <p><strong>關鍵詞：</strong>中國民樂、交響樂、環境音效、文化氛圍</p>
+            <p><strong>來源：</strong>遊戲原聲帶 + The Verge 音樂評論</p>
+            
+            <h4>詳細內容</h4>
+            <p>遊戲的音樂由中國作曲家團隊操刀，將傳統中國民樂器（如二胡、琵琶、古箏、笛子）與現代交響樂團結合，創造出一種「史詩感 + 東方韻味」的獨特聲音。</p>
+            
+            <p>例如，在 Boss 戰中，音樂會使用激昂的鼓點和嗩吶來營造緊張感；而在探索場景時，則會轉為悠揚的笛聲和古箏，營造出寧靜、神秘的氛圍。</p>
+            
+            <p>遊戲的環境音效也極為考究。在古建築場景中，可以聽到木結構的吱嘎聲、風吹過屋簷的呼嘯聲；在山林場景中，則有蟲鳴、鳥叫、溪流聲。這些細節讓遊戲世界更加「活」起來。</p>
+            
+            <p>音樂和聲音設計不僅是「背景」，更是「文化氛圍」的重要組成部分，讓玩家在聽覺上也能感受到濃厚的中國文化氣息。</p>
+        </div>
+    </div>
+
+    <div id="modal-kb-culture" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('kb-culture')">&times;</span>
+            <h3>知識塊：文化輸出與全球影響</h3>
+            <p><strong>關鍵詞：</strong>3A遊戲、文化輸出、全球關注、Steam、文化自信</p>
+            <p><strong>來源：</strong>The Guardian 報導 + Steam 銷售數據</p>
+            
+            <h4>詳細內容</h4>
+            <p>《黑神話：悟空》在 2024 年 8 月正式發售後，迅速成為全球遊戲界的現象級作品。遊戲在 Steam 平台上線首日即達到 220 萬同時在線玩家，打破了多項紀錄，並在全球多個國家的銷量榜上位居榜首。</p>
+            
+            <p>這款遊戲的成功，不僅是商業上的勝利，更是文化輸出的里程碑。它證明了「中國文化題材 + 頂級工業化製作」的組合，可以在全球市場上獲得廣泛認可。許多海外玩家表示，這是他們第一次通過遊戲深入接觸中國神話和文化，並對《西遊記》、《山海經》等經典產生了濃厚興趣。</p>
+            
+            <p>《黑神話：悟空》的成功，也激勵了更多中國遊戲開發者投入到「文化 + 技術」的創作中。它向世界展示了：中國不僅可以製作出技術領先的 3A 遊戲，更可以用自己的文化故事打動全球玩家。</p>
+            
+            <p>這種「文化自信」的展現，是遊戲最深遠的意義所在。</p>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 12;
+
+        function showSlide(n) {
+            const slides = document.querySelectorAll('.slide');
+            
+            if (n > totalSlides) {
+                currentSlide = totalSlides;
+            } else if (n < 1) {
+                currentSlide = 1;
+            } else {
+                currentSlide = n;
+            }
+
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active');
+                if (index === currentSlide - 1) {
+                    slide.classList.add('active');
+                }
+            });
+
+            document.getElementById('current-slide').textContent = currentSlide;
+        }
+
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+
+        function previousSlide() {
+            showSlide(currentSlide - 1);
+        }
+
+        function showModal(modalId) {
+            const modal = document.getElementById('modal-' + modalId);
+            if (modal) {
+                modal.classList.add('active');
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById('modal-' + modalId);
+            if (modal) {
+                modal.classList.remove('active');
+            }
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                previousSlide();
+            } else if (e.key === 'Escape') {
+                // Close all modals
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.classList.remove('active');
+                });
+            }
+        });
+
+        // Close modal when clicking outside
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+
+        // Initialize
+        document.getElementById('current-slide').textContent = currentSlide;
+        document.getElementById('total-slides').textContent = totalSlides;
+        showSlide(1);
+    </script>
+</body>
+</html>
+
