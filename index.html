@@ -37,6 +37,20 @@
             position: relative;
         }
 
+        .slides-container::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(228, 0, 75, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(237, 119, 90, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
         .slide {
             width: 100%;
             min-height: 100vh;
@@ -48,6 +62,7 @@
             position: relative;
             opacity: 0;
             transition: opacity 0.5s ease-in-out;
+            z-index: 1;
         }
 
         .slide.active {
@@ -431,6 +446,14 @@
             border-radius: 12px;
             margin: 1rem 0;
             max-width: 700px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .dialogue-box:hover {
+            background: rgba(0, 0, 0, 0.6);
+            transform: translateX(5px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
         }
 
         .dialogue-box p {
@@ -565,6 +588,11 @@
             background: rgba(255, 255, 255, 0.2);
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
             border-color: var(--pink);
+        }
+
+        .kb-card:focus {
+            outline: 3px solid rgba(228, 0, 75, 0.5);
+            outline-offset: 2px;
         }
 
         .kb-title {
@@ -871,6 +899,11 @@
             transform: scale(0.95);
         }
 
+        .nav-btn:focus {
+            outline: 3px solid rgba(228, 0, 75, 0.5);
+            outline-offset: 2px;
+        }
+
         .nav-btn span {
             position: relative;
             z-index: 1;
@@ -906,6 +939,36 @@
             background: linear-gradient(90deg, var(--pink) 0%, var(--orange) 50%, var(--yellow) 100%);
             transition: width 0.3s ease;
             box-shadow: 0 0 10px rgba(228, 0, 75, 0.5);
+        }
+
+        /* Keyboard hint */
+        .keyboard-hint {
+            position: fixed;
+            bottom: 6rem;
+            right: 2rem;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            z-index: 1000;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .keyboard-hint:hover {
+            opacity: 1;
+        }
+
+        .keyboard-hint kbd {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+            padding: 0.2rem 0.4rem;
+            margin: 0 0.2rem;
+            font-family: monospace;
+            font-size: 0.9em;
         }
 
         /* Modal */
@@ -1184,6 +1247,10 @@
             .page-indicator {
                 bottom: 1rem;
                 left: 1rem;
+            }
+
+            .keyboard-hint {
+                display: none;
             }
         }
     </style>
@@ -1545,6 +1612,9 @@
     <!-- Navigation -->
     <div class="page-indicator">
         <span id="current-slide">1</span> / 12
+    </div>
+    <div class="keyboard-hint">
+        <kbd>←</kbd> <kbd>→</kbd> <kbd>Space</kbd> 或點擊按鈕導航
     </div>
     <div class="nav-controls">
         <button class="nav-btn" onclick="prevSlide()"><span>← 上一頁</span></button>
