@@ -452,7 +452,7 @@
 
         .dialogue-box:hover {
             background: rgba(0, 0, 0, 0.6);
-            transform: translateX(5px);
+            border-left-width: 6px;
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
         }
 
@@ -534,8 +534,9 @@
         }
 
         .context-item:hover {
-            background: rgba(0, 0, 0, 0.4);
-            transform: translateX(5px);
+            background: rgba(0, 0, 0, 0.45);
+            border-left: 3px solid var(--yellow);
+            padding-left: calc(1rem - 3px);
         }
 
         .context-label {
@@ -568,6 +569,36 @@
             }
             50% {
                 box-shadow: 0 4px 16px rgba(250, 214, 145, 0.8);
+            }
+        }
+
+        /* Reduced motion preferences */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+
+            .new-badge {
+                animation: none;
+            }
+
+            .stat-number {
+                animation: none;
+            }
+
+            .slide.active {
+                animation: none;
+                opacity: 1;
+            }
+
+            .slide.active h1,
+            .slide.active h2,
+            .slide.active .subtitle,
+            .slide.active p,
+            .slide.active .card {
+                animation: none;
             }
         }
 
